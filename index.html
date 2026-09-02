@@ -1,0 +1,459 @@
+<!DOCTYPE html>
+<html lang="my">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>စာရင်းချုပ် Ledger</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0d1117">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Pyidaungsu', 'Myanmar Text', sans-serif; -webkit-tap-highlight-color: transparent; }
+  html, body { width: 100%; min-height: 100%; background: #0a0e14; color: #e8eaed; }
+  body { padding-bottom: 24px; }
+
+  header { position: sticky; top: 0; z-index: 50; background: #10151f; border-bottom: 1px solid #1f2937; padding: 14px 16px 0; }
+  header h1 { font-size: 17px; color: #f0b429; font-weight: 700; margin-bottom: 10px; letter-spacing: 0.3px; }
+  nav { display: flex; gap: 6px; }
+  nav button { flex: 1; background: none; border: none; color: #8b94a3; font-size: 13px; padding: 10px 0; border-bottom: 2px solid transparent; font-weight: 600; }
+  nav button.active { color: #f0b429; border-bottom-color: #f0b429; }
+
+  main { padding: 14px; }
+  .card { background: #10151f; border: 1px solid #1f2937; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row + .row { margin-top: 10px; }
+  label { font-size: 12px; color: #8b94a3; display: block; margin-bottom: 4px; }
+  input, select { width: 100%; background: #0a0e14; border: 1px solid #2a3341; color: #e8eaed; border-radius: 6px; padding: 9px 10px; font-size: 14px; }
+  input:focus, select:focus { outline: none; border-color: #f0b429; }
+  .btn { display: inline-block; text-align: center; border: none; border-radius: 6px; padding: 10px 14px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-gold { background: #f0b429; color: #10151f; }
+  .btn-outline { background: none; border: 1px solid #2a3341; color: #cbd3dd; }
+  .btn-danger { background: none; border: 1px solid #a83244; color: #f28a9a; }
+  .btn-block { width: 100%; }
+
+  .agent-item { display: flex; justify-content: space-between; align-items: center; padding: 10px 0; border-bottom: 1px solid #1f2937; }
+  .agent-item:last-child { border-bottom: none; }
+  .agent-name { font-weight: 700; font-size: 15px; }
+  .agent-meta { font-size: 11.5px; color: #8b94a3; margin-top: 2px; }
+  .tag { display: inline-block; font-size: 10px; padding: 1px 6px; border-radius: 3px; margin-left: 6px; font-weight: 700; }
+  .tag-user { background: #1e3a5f; color: #7cc0ff; }
+  .tag-akan { background: #5f2f1e; color: #ffab7c; }
+  .icon-btn { background: none; border: none; font-size: 17px; padding: 4px 6px; cursor: pointer; }
+
+  .entry-block { border-bottom: 1px solid #1f2937; padding: 12px 0; }
+  .entry-block:last-child { border-bottom: none; }
+  .entry-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 8px; }
+
+  .shift-toggle { display: flex; background: #0a0e14; border: 1px solid #2a3341; border-radius: 6px; overflow: hidden; }
+  .shift-toggle button { flex: 1; background: none; border: none; color: #8b94a3; padding: 9px 0; font-size: 13px; font-weight: 600; }
+  .shift-toggle button.active { background: #f0b429; color: #10151f; }
+
+  .rep-scroll { overflow-x: auto; border: 1px solid #1f2937; border-radius: 8px; }
+  table.rep { border-collapse: collapse; width: 100%; min-width: 620px; font-size: 12px; }
+  table.rep th, table.rep td { border: 1px solid #1f2937; padding: 8px 6px; text-align: center; white-space: nowrap; }
+  table.rep thead th { background: #161d29; color: #7ea8ff; font-size: 12px; }
+  table.rep td.name-cell { text-align: left; font-weight: 700; background: #0d1219; position: sticky; left: 0; }
+  table.rep td.bp-cell { color: #cbd3dd; font-size: 11.5px; }
+  .pos { color: #34d399; font-weight: 700; }
+  .neg { color: #f87171; font-weight: 700; }
+  .zero { color: #8b94a3; }
+
+  .weeknav { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+  .weeknav span { font-size: 13px; color: #cbd3dd; font-weight: 600; }
+
+  .empty-note { text-align: center; color: #5b6577; font-size: 13px; padding: 30px 10px; }
+  .fab { position: fixed; right: 18px; bottom: 18px; width: 52px; height: 52px; border-radius: 50%; background: #f0b429; color: #10151f; border: none; font-size: 26px; box-shadow: 0 4px 14px rgba(0,0,0,0.4); z-index: 40; }
+
+  .modal-bg { display: none; position: fixed; inset: 0; background: rgba(0,0,0,0.6); z-index: 100; align-items: flex-end; justify-content: center; }
+  .modal-bg.show { display: flex; }
+  .modal { background: #10151f; border-top: 1px solid #2a3341; border-radius: 14px 14px 0 0; padding: 18px; width: 100%; max-width: 480px; }
+  .modal h2 { font-size: 15px; color: #f0b429; margin-bottom: 12px; }
+  .modal .row { margin-top: 10px; }
+  .modal .actions { display: flex; gap: 8px; margin-top: 16px; }
+
+  #toast { position: fixed; top: 14px; left: 50%; transform: translateX(-50%); background: #34d399; color: #06281c; padding: 10px 18px; border-radius: 8px; font-size: 13px; font-weight: 700; z-index: 200; display: none; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📒 စာရင်းချုပ် Ledger</h1>
+  <nav>
+    <button id="tabEntryBtn" class="active" onclick="switchTab('entry')">နေ့စဉ်ရိုက်ရန်</button>
+    <button id="tabReportBtn" onclick="switchTab('report')">စာရင်းချုပ်</button>
+    <button id="tabAgentBtn" onclick="switchTab('agents')">အကောင့်များ</button>
+  </nav>
+</header>
+
+<main>
+
+  <!-- ENTRY TAB -->
+  <div id="page-entry">
+    <div class="card">
+      <div class="row">
+        <div style="flex:1;">
+          <label>ရက်စွဲ</label>
+          <input type="date" id="entryDate">
+        </div>
+      </div>
+      <div class="row">
+        <div style="flex:1;">
+          <label>ပွဲစဉ်</label>
+          <div class="shift-toggle">
+            <button id="shiftMorningBtn" onclick="setShift('morning')">မနက်</button>
+            <button id="shiftEveningBtn" onclick="setShift('evening')">ည</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card" id="entryListCard">
+      <!-- filled by JS -->
+    </div>
+
+    <button class="btn btn-gold btn-block" onclick="saveEntries()">💾 သိမ်းမည်</button>
+  </div>
+
+  <!-- REPORT TAB -->
+  <div id="page-report" style="display:none;">
+    <div class="card">
+      <div class="weeknav">
+        <button class="btn btn-outline" onclick="changeWeek(-1)">◀ အရင်ပတ်</button>
+        <span id="weekLabel"></span>
+        <button class="btn btn-outline" onclick="changeWeek(1)">နောက်ပတ် ▶</button>
+      </div>
+      <div class="rep-scroll">
+        <table class="rep" id="repTable"></table>
+      </div>
+    </div>
+  </div>
+
+  <!-- AGENTS TAB -->
+  <div id="page-agents" style="display:none;">
+    <div class="card" id="agentListCard">
+      <!-- filled by JS -->
+    </div>
+  </div>
+
+</main>
+
+<button class="fab" id="addAgentFab" onclick="openAgentModal()" style="display:none;">＋</button>
+
+<!-- Agent add/edit modal -->
+<div class="modal-bg" id="agentModalBg">
+  <div class="modal">
+    <h2 id="agentModalTitle">အကောင့်အသစ်ထည့်ရန်</h2>
+    <input type="hidden" id="agentEditId">
+    <div class="row">
+      <div style="flex:1;">
+        <label>အမည်</label>
+        <input type="text" id="agentName" placeholder="ဥပမာ - 11">
+      </div>
+    </div>
+    <div class="row">
+      <div style="flex:1;">
+        <label>ကော်မရှင် %</label>
+        <input type="number" id="agentComm" placeholder="15">
+      </div>
+      <div style="flex:1;">
+        <label>အဆ (ပေါက်ဆ)</label>
+        <input type="number" id="agentPayoutRate" placeholder="80">
+      </div>
+    </div>
+    <div class="row">
+      <div style="flex:1;">
+        <label>အမျိုးအစား</label>
+        <select id="agentType">
+          <option value="user">ထိုးသား</option>
+          <option value="akan">အကန်</option>
+        </select>
+      </div>
+    </div>
+    <div class="actions">
+      <button class="btn btn-outline btn-block" onclick="closeAgentModal()">ပယ်ဖျက်</button>
+      <button class="btn btn-gold btn-block" onclick="saveAgent()">သိမ်းမည်</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast"></div>
+
+<script>
+// ---------- storage helpers ----------
+function loadAgents() { try { return JSON.parse(localStorage.getItem('ledger_agents')) || []; } catch(e){ return []; } }
+function saveAgentsList(list) { localStorage.setItem('ledger_agents', JSON.stringify(list)); }
+function loadEntries() { try { return JSON.parse(localStorage.getItem('ledger_entries')) || []; } catch(e){ return []; } }
+function saveEntriesList(list) { localStorage.setItem('ledger_entries', JSON.stringify(list)); }
+
+let agents = loadAgents();
+let entries = loadEntries();
+
+function toast(msg) {
+  let t = document.getElementById('toast');
+  t.textContent = msg;
+  t.style.display = 'block';
+  setTimeout(() => t.style.display = 'none', 1600);
+}
+
+// ---------- tabs ----------
+function switchTab(tab) {
+  document.getElementById('page-entry').style.display = tab === 'entry' ? 'block' : 'none';
+  document.getElementById('page-report').style.display = tab === 'report' ? 'block' : 'none';
+  document.getElementById('page-agents').style.display = tab === 'agents' ? 'block' : 'none';
+  document.getElementById('tabEntryBtn').classList.toggle('active', tab === 'entry');
+  document.getElementById('tabReportBtn').classList.toggle('active', tab === 'report');
+  document.getElementById('tabAgentBtn').classList.toggle('active', tab === 'agents');
+  document.getElementById('addAgentFab').style.display = tab === 'agents' ? 'block' : 'none';
+  if(tab === 'entry') renderEntryList();
+  if(tab === 'report') renderReport();
+  if(tab === 'agents') renderAgentList();
+}
+
+// ---------- date / shift helpers ----------
+function todayStr() {
+  let d = new Date();
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+let currentShift = new Date().getHours() < 12 ? 'morning' : 'evening';
+
+function setShift(s) {
+  currentShift = s;
+  document.getElementById('shiftMorningBtn').classList.toggle('active', s === 'morning');
+  document.getElementById('shiftEveningBtn').classList.toggle('active', s === 'evening');
+  renderEntryFields();
+}
+
+// ---------- ENTRY TAB ----------
+function renderEntryList() {
+  document.getElementById('shiftMorningBtn').classList.toggle('active', currentShift === 'morning');
+  document.getElementById('shiftEveningBtn').classList.toggle('active', currentShift === 'evening');
+  renderEntryFields();
+}
+
+function renderEntryFields() {
+  let date = document.getElementById('entryDate').value || todayStr();
+  document.getElementById('entryDate').value = date;
+
+  let card = document.getElementById('entryListCard');
+  if(agents.length === 0) {
+    card.innerHTML = `<div class="empty-note">အကောင့်များ မထည့်ရသေးပါ။<br>"အကောင့်များ" tab ကနေ အရင်ထည့်ပါ။</div>`;
+    return;
+  }
+
+  card.innerHTML = agents.map(a => {
+    let existing = entries.find(e => e.date === date && e.shift === currentShift && e.agentId === a.id);
+    let betVal = existing ? existing.bet : '';
+    let payoutVal = existing ? existing.payout : '';
+    let typeLabel = a.type === 'akan' ? 'အကန်' : 'ထိုးသား';
+    let tagClass = a.type === 'akan' ? 'tag-akan' : 'tag-user';
+    return `<div class="entry-block">
+      <div class="agent-name">${a.name} <span class="tag ${tagClass}">${typeLabel}</span></div>
+      <div class="entry-grid">
+        <div>
+          <label>ထိုးငွေ (Bet)</label>
+          <input type="number" inputmode="numeric" id="bet_${a.id}" value="${betVal}" placeholder="0">
+        </div>
+        <div>
+          <label>ပေါက်ငွေ (Hit Amt)</label>
+          <input type="number" inputmode="numeric" id="payout_${a.id}" value="${payoutVal}" placeholder="0">
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function saveEntries() {
+  let date = document.getElementById('entryDate').value || todayStr();
+  agents.forEach(a => {
+    let betInput = document.getElementById('bet_' + a.id);
+    let payoutInput = document.getElementById('payout_' + a.id);
+    if(!betInput) return;
+    let bet = Number(betInput.value) || 0;
+    let payout = Number(payoutInput.value) || 0;
+
+    let idx = entries.findIndex(e => e.date === date && e.shift === currentShift && e.agentId === a.id);
+    if(bet === 0 && payout === 0) {
+      if(idx >= 0) entries.splice(idx, 1);
+      return;
+    }
+    let record = { date, shift: currentShift, agentId: a.id, bet, payout };
+    if(idx >= 0) entries[idx] = record;
+    else entries.push(record);
+  });
+  saveEntriesList(entries);
+  toast('✅ သိမ်းပြီးပါပြီ');
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  document.getElementById('entryDate').value = todayStr();
+  document.getElementById('entryDate').addEventListener('change', renderEntryList);
+});
+
+// ---------- AGENTS TAB ----------
+function renderAgentList() {
+  let card = document.getElementById('agentListCard');
+  if(agents.length === 0) {
+    card.innerHTML = `<div class="empty-note">အကောင့်များ မရှိသေးပါ။<br>ညာဘက်အောက်က ➕ ကိုနှိပ်ပြီး ထည့်ပါ။</div>`;
+    return;
+  }
+  card.innerHTML = agents.map(a => {
+    let typeLabel = a.type === 'akan' ? 'အကန်' : 'ထိုးသား';
+    let tagClass = a.type === 'akan' ? 'tag-akan' : 'tag-user';
+    return `<div class="agent-item">
+      <div>
+        <div class="agent-name">${a.name}<span class="tag ${tagClass}">${typeLabel}</span></div>
+        <div class="agent-meta">ကော်: ${a.comm}%  ·  အဆ: ${a.payoutRate}</div>
+      </div>
+      <div>
+        <button class="icon-btn" onclick="openAgentModal('${a.id}')">✏️</button>
+        <button class="icon-btn" onclick="deleteAgent('${a.id}')">🗑️</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openAgentModal(id) {
+  document.getElementById('agentModalBg').classList.add('show');
+  if(id) {
+    let a = agents.find(x => x.id === id);
+    document.getElementById('agentModalTitle').textContent = 'အကောင့် ပြင်ရန်';
+    document.getElementById('agentEditId').value = id;
+    document.getElementById('agentName').value = a.name;
+    document.getElementById('agentComm').value = a.comm;
+    document.getElementById('agentPayoutRate').value = a.payoutRate;
+    document.getElementById('agentType').value = a.type;
+  } else {
+    document.getElementById('agentModalTitle').textContent = 'အကောင့်အသစ်ထည့်ရန်';
+    document.getElementById('agentEditId').value = '';
+    document.getElementById('agentName').value = '';
+    document.getElementById('agentComm').value = '';
+    document.getElementById('agentPayoutRate').value = '';
+    document.getElementById('agentType').value = 'user';
+  }
+}
+function closeAgentModal() {
+  document.getElementById('agentModalBg').classList.remove('show');
+}
+function saveAgent() {
+  let name = document.getElementById('agentName').value.trim();
+  if(!name) { toast('❌ အမည် ထည့်ပါ'); return; }
+  let comm = Number(document.getElementById('agentComm').value) || 0;
+  let payoutRate = Number(document.getElementById('agentPayoutRate').value) || 0;
+  let type = document.getElementById('agentType').value;
+  let editId = document.getElementById('agentEditId').value;
+
+  if(editId) {
+    let a = agents.find(x => x.id === editId);
+    a.name = name; a.comm = comm; a.payoutRate = payoutRate; a.type = type;
+  } else {
+    agents.push({ id: 'ag_' + Date.now(), name, comm, payoutRate, type });
+  }
+  saveAgentsList(agents);
+  closeAgentModal();
+  renderAgentList();
+  toast('✅ သိမ်းပြီးပါပြီ');
+}
+function deleteAgent(id) {
+  if(!confirm('ဒီအကောင့်ကို ဖျက်မှာ သေချာပါသလား?')) return;
+  agents = agents.filter(a => a.id !== id);
+  saveAgentsList(agents);
+  renderAgentList();
+}
+
+// ---------- REPORT TAB ----------
+let weekOffset = 0;
+function getMondayOfWeek(offsetWeeks) {
+  let d = new Date();
+  let day = d.getDay(); // 0=Sun..6=Sat
+  let diffToMonday = day === 0 ? -6 : 1 - day;
+  d.setDate(d.getDate() + diffToMonday + (offsetWeeks * 7));
+  d.setHours(0,0,0,0);
+  return d;
+}
+function fmtDate(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+function changeWeek(delta) {
+  weekOffset += delta;
+  renderReport();
+}
+
+function netFor(agent, bet, payoutHit) {
+  let commAmt = bet * ((agent.comm || 0) / 100);
+  let payoutMoney = payoutHit * (agent.payoutRate || 0);
+  if(agent.type === 'akan') return payoutMoney - (bet - commAmt);
+  return (bet - commAmt) - payoutMoney;
+}
+
+function renderReport() {
+  let monday = getMondayOfWeek(weekOffset);
+  let dayNames = ['Mon','Tue','Wed','Thu','Fri'];
+  let dayDates = dayNames.map((_, i) => {
+    let d = new Date(monday);
+    d.setDate(d.getDate() + i);
+    return fmtDate(d);
+  });
+
+  document.getElementById('weekLabel').textContent = dayDates[0] + '  ~  ' + dayDates[4];
+
+  if(agents.length === 0) {
+    document.getElementById('repTable').innerHTML = '';
+    document.querySelector('.rep-scroll').innerHTML = '<div class="empty-note">အကောင့်များ မရှိသေးပါ။</div>';
+    return;
+  }
+
+  // daily totals across all agents
+  let dailyTotals = dayDates.map(date => {
+    let sum = 0;
+    agents.forEach(a => {
+      let dayEntries = entries.filter(e => e.date === date && e.agentId === a.id);
+      let bet = dayEntries.reduce((s,e) => s + e.bet, 0);
+      let payout = dayEntries.reduce((s,e) => s + e.payout, 0);
+      sum += netFor(a, bet, payout);
+    });
+    return sum;
+  });
+  let weekGrandTotal = dailyTotals.reduce((s,v) => s+v, 0);
+
+  let html = '<thead><tr><th>အမည်</th>';
+  dayNames.forEach((day, i) => {
+    let v = dailyTotals[i];
+    let cls = v > 0 ? 'pos' : (v < 0 ? 'neg' : 'zero');
+    let sign = v > 0 ? '+' : '';
+    html += `<th>${day}<br><span class="${cls}" style="font-size:10.5px;">${sign}${v.toLocaleString()}</span></th>`;
+  });
+  let gcls = weekGrandTotal > 0 ? 'pos' : (weekGrandTotal < 0 ? 'neg' : 'zero');
+  let gsign = weekGrandTotal > 0 ? '+' : '';
+  html += `<th>Total<br><span class="${gcls}" style="font-size:10.5px;">${gsign}${weekGrandTotal.toLocaleString()}</span></th></tr></thead><tbody>`;
+
+  agents.forEach(a => {
+    let rowNet = 0;
+    let cells = dayDates.map(date => {
+      let dayEntries = entries.filter(e => e.date === date && e.agentId === a.id);
+      let bet = dayEntries.reduce((s,e) => s + e.bet, 0);
+      let payout = dayEntries.reduce((s,e) => s + e.payout, 0);
+      rowNet += netFor(a, bet, payout);
+      if(bet === 0 && payout === 0) return `<td class="bp-cell">-</td>`;
+      return `<td class="bp-cell">${bet.toLocaleString()} / ${payout.toLocaleString()}</td>`;
+    }).join('');
+    let rcls = rowNet > 0 ? 'pos' : (rowNet < 0 ? 'neg' : 'zero');
+    let rsign = rowNet > 0 ? '+' : '';
+    let typeLabel = a.type === 'akan' ? 'အကန်' : 'ထိုးသား';
+    let tagClass = a.type === 'akan' ? 'tag-akan' : 'tag-user';
+    html += `<tr><td class="name-cell">${a.name} <span class="tag ${tagClass}" style="font-size:9px;">${typeLabel}</span></td>${cells}<td class="${rcls}">${rsign}${rowNet.toLocaleString()}</td></tr>`;
+  });
+  html += '</tbody>';
+  document.getElementById('repTable').innerHTML = html;
+}
+
+// ---------- init ----------
+renderEntryList();
+
+// ---------- service worker ----------
+if('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+</script>
+</body>
+</html>
