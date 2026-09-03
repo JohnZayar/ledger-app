@@ -1,0 +1,8 @@
+[{
+      "relation": ["delegate_permission/common.handle_all_urls"],
+      "target": {
+        "namespace": "android_app",
+        "package_name": "io.github.johnzayar.ledger",
+        "sha256_cert_fingerprints": ["44:F9:2A:2C:60:CE:10:58:CA:B1:29:9A:9B:A0:4E:F9:C0:3E:44:4F:DC:0B:B5:3E:C0:2E:EA:18:04:F5:2A:F6"]
+      }
+    }]
